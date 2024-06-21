@@ -6,8 +6,9 @@ authors = ["Lucas Ikuhara <lri2911@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.10"
 pandas = "^2.2.2"
+ipykernel = "^6.29.4"
 
 
 [build-system]
