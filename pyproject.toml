@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "eel-891-intro-aprendizado-de-maquina"
+version = "0.1.0"
+description = "Two small data science examples. t1 is classification problem, and t2 is a regression one."
+authors = ["Lucas Ikuhara <lri2911@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pandas = "^2.2.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
