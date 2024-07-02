@@ -2,8 +2,10 @@
 # Read data and examine it
 import pandas as pd
 
+INPUT_FILE = "data/conjunto_de_treinamento.csv"
+OUTPUT_FILE = "clean_training_ds.csv"
 
-df = pd.read_csv("data/conjunto_de_treinamento.csv")
+df = pd.read_csv(INPUT_FILE)
 df.info()
 
 # %%
@@ -62,4 +64,4 @@ df = df.drop(["qtde_contas_bancarias_especiais", "local_onde_reside"], axis=1)
 
 # %%
 # Dump df to csv
-df.to_csv("clean_training_ds.csv")
+df.to_csv(OUTPUT_FILE)
