@@ -41,11 +41,17 @@ def log_from_grid(name_prefix: str, params, metrics):
     # Append params to name
     name = name_prefix
     for p in params:
+
+        # Format floats with 2 decimals
+        val = params[p]
+        if isinstance(val, float): val = f"{val:.2f}"
         name += f"-{p}-{params[p]}"
-    print("logging ", name)
+
+    print(f"Logging model: {name}...")
     with start_run(
         experiment_id=EXP_ID,
         run_name=name,
+        tags={"technique": name_prefix}
     ):
         log_params(params)
         log_metrics(metrics)
@@ -53,11 +59,13 @@ def log_from_grid(name_prefix: str, params, metrics):
 # %%
 # Train Logistic regressor
 param_grid = [
-    {"C": [0.8, 0.9, 1, 1.1, 1.2], "n_jobs": [15]}
+    {"C": [0.1*(i+1) for i in range(20)], "penalty": ["l2", None]},
+    {"C": [0.1*(i+1) for i in range(20)], "penalty": ["l1"], "solver": ["liblinear"]}
 ]
 
 gs = GridSearchCV(
     LogisticRegression(),
+    n_jobs=15,
     param_grid=param_grid,
     cv=cv
 )
