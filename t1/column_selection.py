@@ -58,5 +58,3 @@ for i in range(1, column_count + 1):
 
     log_results("column-selection", params, metrics, i)
     print(f"{i} columns used, accuracy: {score.mean()}")
-
-# %%

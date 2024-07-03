@@ -65,6 +65,21 @@ df = df[abs(corr["inadimplente"]).sort_values(ascending=False).index]
 # Drop redundant numerical columns (corr = 1)
 df = df.drop(["qtde_contas_bancarias_especiais", "local_onde_reside"], axis=1)
 
+# %% 
+# Exclude listed columns
+use_cols_except = [
+    "forma_envio_solicitacao",
+    "estado_onde_nasceu",
+    "estado_onde_reside",
+    "possui_telefone_residencial",
+    "codigo_area_telefone_residencial",
+    "vinculo_formal_com_empresa",
+    "estado_onde_trabalha",
+    "possui_telefone_trabalho",
+    "codigo_area_telefone_trabalho",
+]
+df = df.drop(use_cols_except, axis=1)
+
 # %%
 # Dump df to csv
 df.to_csv(OUTPUT_FILE)
