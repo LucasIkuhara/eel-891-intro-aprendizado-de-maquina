@@ -51,7 +51,10 @@ def log_from_grid(name_prefix: str, params, metrics):
     with start_run(
         experiment_id=EXP_ID,
         run_name=name,
-        tags={"technique": name_prefix}
+        tags={
+            "technique": name_prefix,
+            "objective": "acc-optimization",
+        }
     ):
         log_params(params)
         log_metrics(metrics)
@@ -82,5 +85,3 @@ for i in range(len(results["mean_test_score"])):
     }
 
     log_from_grid("logistic-regression", params=params, metrics=metrics)
-
-# %%

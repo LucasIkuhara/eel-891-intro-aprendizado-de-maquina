@@ -6,11 +6,10 @@ INPUT_FILE = "data/conjunto_de_treinamento.csv"
 OUTPUT_FILE = "clean_training_ds.csv"
 
 df = pd.read_csv(INPUT_FILE)
-df.info()
 
 # %%
 # Assess Nulls and missing
-df[df.isna()].info()
+df.info()
 
 # %%
 # Drop "grau_instrucao" which only has 0's
@@ -57,6 +56,10 @@ for col in bin_cols:
 num_df = df.select_dtypes(exclude=[object])
 corr = num_df.corr()
 corr.style.background_gradient(cmap='coolwarm').format(precision=2)
+
+# %%
+# Sort df by correlation with target column
+df = df[abs(corr["inadimplente"]).sort_values(ascending=False).index]
 
 # %%
 # Drop redundant numerical columns (corr = 1)
