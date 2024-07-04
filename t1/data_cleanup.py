@@ -12,10 +12,6 @@ df = pd.read_csv(INPUT_FILE)
 df.info()
 
 # %%
-# Drop "grau_instrucao" which only has 0's
-df = df.drop(["grau_instrucao"], axis=1)
-
-# %%
 # Check non-numerical columns for unique values
 str_df = df.select_dtypes(include=[object])
 uniques = []
@@ -28,15 +24,12 @@ for col in str_df.columns:
 pd.DataFrame(uniques, columns=["column", "unique-count"])
 
 # %%
-# Transform columns into numbers
-
+# Transform sex into numbers
 # Go from "sexo" (M, F, N, " ") to 0, 1
 df = df[df["sexo"] != " "]  # Drop empty strings
 df["sexo"] = df["sexo"].map(lambda e: 1 if e == "F" else 0)  # Cast to num, assuming N is typo for M
 
-# Drop "possui_telefone_celular" which only has one value
-df = df.drop(["possui_telefone_celular"], axis=1)
-
+# %%
 # Transform columns with 2 values as binary
 bin_cols = [
     "possui_telefone_residencial",
@@ -50,6 +43,49 @@ for col in bin_cols:
         lambda e: 1 if e == first_val else 0
     )
 
+# %%
+# Map states into regions in ascending HDI order (with missing as a region)
+nordeste = ["MA", "PI", "CE", "RN", "PB", "PE", "AL", "SE", "BA"]
+norte = ["AM", "PA", "AC", "RO", "RR", "AP", "TO"]
+centro_oeste = ["MT", "MS", "GO", "DF"]
+sudeste = ["RJ", "MG", "SP", "ES"]
+sul = ["RS", "SC", "PA"]
+
+def map_state(el: str) -> float:
+    if el in nordeste: return 1
+    elif el in norte: return 2
+    elif el in centro_oeste: return 3
+    elif el in sudeste: return 4
+    elif el in sul: return 5
+    else: return 0
+
+df["estado_onde_nasceu"] = df["estado_onde_nasceu"].map(map_state)
+df["estado_onde_reside"] = df["estado_onde_reside"].map(map_state)
+df["estado_onde_trabalha"] = df["estado_onde_trabalha"].map(map_state)
+
+# %%
+# One-hot encode "forma_envio_solicitacao"
+df["envio_presencial"] = df["forma_envio_solicitacao"] == "presencial"
+df["envio_internet"] = df["forma_envio_solicitacao"] == "internet"
+df["envio_correio"] = df["forma_envio_solicitacao"] == "correio"
+
+# %%
+# Exclude phone area codes, which somewhat equivalent to state already
+area_codes = [
+    "codigo_area_telefone_residencial",
+    "codigo_area_telefone_trabalho",
+]
+
+# Drop columns which are mostly null, with no way to fill them
+useless = [
+    "possui_telefone_celular",    # All 'N's
+    "grau_instrucao",             # All 0's
+    "profissao_companheiro",      # ~2/3s empty
+    "grau_instrucao_companheiro",  # ~2/3s empty
+    "forma_envio_solicitacao"  # one-hot encoded before
+]
+
+df = df.drop(area_codes + useless, axis=1)
 
 # %%
 # Get correlation of numerical columns
@@ -58,28 +94,20 @@ corr = num_df.corr()
 corr.style.background_gradient(cmap='coolwarm').format(precision=2)
 
 # %%
+# Drop redundant numerical columns (corr = 1)
+redundant = [
+    "qtde_contas_bancarias_especiais",
+    "local_onde_trabalha"
+]
+
+df = df.drop(redundant, axis=1)
+
+# %%
 # Sort df by correlation with target column
+corr = df.corr()
 df = df[abs(corr["inadimplente"]).sort_values(ascending=False).index]
 
 # %%
-# Drop redundant numerical columns (corr = 1)
-df = df.drop(["qtde_contas_bancarias_especiais", "local_onde_reside"], axis=1)
-
-# %% 
-# Exclude listed columns
-use_cols_except = [
-    "forma_envio_solicitacao",
-    "estado_onde_nasceu",
-    "estado_onde_reside",
-    "possui_telefone_residencial",
-    "codigo_area_telefone_residencial",
-    "vinculo_formal_com_empresa",
-    "estado_onde_trabalha",
-    "possui_telefone_trabalho",
-    "codigo_area_telefone_trabalho",
-]
-df = df.drop(use_cols_except, axis=1)
-
-# %%
-# Dump df to csv
+# Drop remaining NAs and dump df to csv file
+df = df.dropna()
 df.to_csv(OUTPUT_FILE)
