@@ -31,12 +31,13 @@ def log_from_grid(name_prefix: str, params, metrics):
     # Append params to name
     name = name_prefix
     for p in params:
-        params["columns-used"] = COLS_USED
 
         # Format floats with 2 decimals
         val = params[p]
         if isinstance(val, float): val = f"{val:.2f}"
-        name += f"-{p}-{params[p]}"
+        name += f"-{p}-{val}"
+
+    params["columns-used"] = COLS_USED
 
     print(f"Logging model: {name}...")
     with start_run(
@@ -76,3 +77,5 @@ for i in range(len(results["mean_test_score"])):
     }
 
     log_from_grid("logistic-regression", params=params, metrics=metrics)
+
+# %%
