@@ -33,7 +33,7 @@ def log_results(name_prefix: str, params, metrics, cols_used: int):
         run_name=name,
         tags={
             "objective": "column-selection",
-            "techinique": "logistic-regression"
+            "technique": "logistic-regression"
         }
     ):
         log_params(params)

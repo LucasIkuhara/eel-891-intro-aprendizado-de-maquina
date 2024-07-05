@@ -1,9 +1,10 @@
 # %%
 # Imports
 from mlflow import log_metrics, log_params, start_run
-from sklearn.model_selection import cross_val_score, KFold, GridSearchCV
+from sklearn.model_selection import KFold, GridSearchCV
 from pandas import read_csv
 from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
 
 # %%
 # Read training data
@@ -51,6 +52,18 @@ def log_from_grid(name_prefix: str, params, metrics):
         log_params(params)
         log_metrics(metrics)
 
+
+def log_results(name, results):
+    for i in range(len(results["mean_test_score"])):
+
+        params = results["params"][i]
+        metrics = {
+            "accuracy": results["mean_test_score"][i],
+            "fit-time": results["mean_fit_time"][i]
+        }
+
+        log_from_grid(name, params=params, metrics=metrics)
+
 # %%
 # Train Logistic regressor
 param_grid = [
@@ -65,17 +78,27 @@ gs = GridSearchCV(
     cv=cv
 )
 gs.fit(X=x, y=y)
+
+# Log results
+log_results("logistic-regression", gs.cv_results_)
+
+# %%
+# Train SVM
+param_grid = [{
+    "C": [0.1*(i+1) for i in range(20)],
+    "gamma": [0.1*(i+1) for i in range(20)]
+}]
+
+gs = GridSearchCV(
+    SVC(),
+    n_jobs=15,
+    param_grid=param_grid,
+    cv=cv
+)
+gs.fit(X=x, y=y)
 results = gs.cv_results_
 
 # Log results
-for i in range(len(results["mean_test_score"])):
-
-    params = results["params"][i]
-    metrics = {
-        "accuracy": results["mean_test_score"][i],
-        "fit-time": results["mean_fit_time"][i]
-    }
-
-    log_from_grid("logistic-regression", params=params, metrics=metrics)
+log_results("svm", gs.cv_results_)
 
 # %%
