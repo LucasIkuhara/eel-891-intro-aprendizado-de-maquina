@@ -65,9 +65,9 @@ df["estado_onde_trabalha"] = df["estado_onde_trabalha"].map(map_state)
 
 # %%
 # One-hot encode "forma_envio_solicitacao"
-df["envio_presencial"] = df["forma_envio_solicitacao"] == "presencial"
-df["envio_internet"] = df["forma_envio_solicitacao"] == "internet"
-df["envio_correio"] = df["forma_envio_solicitacao"] == "correio"
+df["envio_presencial"] = (df["forma_envio_solicitacao"] == "presencial").astype(float)
+df["envio_internet"] = (df["forma_envio_solicitacao"] == "internet").astype(float)
+df["envio_correio"] = (df["forma_envio_solicitacao"] == "correio").astype(float)
 
 # %%
 # Exclude phone area codes, which somewhat equivalent to state already
@@ -81,8 +81,9 @@ useless = [
     "possui_telefone_celular",    # All 'N's
     "grau_instrucao",             # All 0's
     "profissao_companheiro",      # ~2/3s empty
-    "grau_instrucao_companheiro",  # ~2/3s empty
-    "forma_envio_solicitacao"  # one-hot encoded before
+    "grau_instrucao_companheiro", # ~2/3s empty
+    "forma_envio_solicitacao",    # one-hot encoded before
+    "id_solicitante"              # Unique transactional id  
 ]
 
 df = df.drop(area_codes + useless, axis=1)
@@ -110,4 +111,4 @@ df = df[abs(corr["inadimplente"]).sort_values(ascending=False).index]
 # %%
 # Drop remaining NAs and dump df to csv file
 df = df.dropna()
-df.to_csv(OUTPUT_FILE)
+df.to_csv(OUTPUT_FILE, index=False)
