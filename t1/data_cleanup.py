@@ -106,9 +106,11 @@ useless = [
     "profissao_companheiro",      # ~2/3s empty
     "grau_instrucao_companheiro", # ~2/3s empty
     "forma_envio_solicitacao",    # one-hot encoded before
-    "id_solicitante"              # Unique transactional id  
 ]
 
+# Unique transactional id
+if not IS_TEST_FILE:
+    useless.append("id_solicitante")
 df = df.drop(useless, axis=1)
 
 # %%

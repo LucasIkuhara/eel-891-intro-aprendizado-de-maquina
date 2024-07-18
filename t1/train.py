@@ -205,7 +205,7 @@ print(f"Best result: {gs.best_score_:.5f} and params {gs.best_params_}")
 
 # %%
 # Train final model
-model = Pipeline((
+final_model = Pipeline((
     ("std", StandardScaler()),
     ("clf", MLPClassifier(
         activation="relu",
@@ -215,4 +215,17 @@ model = Pipeline((
     ))
 ))
 
-model.fit(x, y)
+final_model.fit(x, y)
+
+# %%
+# Read test data and eval it
+TEST_DATA = "clean_test_ds.csv"
+test_data = read_csv(TEST_DATA)
+
+# Exclude id for inference
+test_x = test_data[test_data.columns[1:COLS_USED + 1]].to_numpy()
+test_y = final_model.predict(test_x)
+
+test_data["inadimplente"] = test_y
+res = test_data[["id_solicitante", "inadimplente"]]
+res.to_csv("results.csv", index=False)
