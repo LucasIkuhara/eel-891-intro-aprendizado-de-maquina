@@ -222,6 +222,10 @@ final_model.fit(x, y)
 TEST_DATA = "clean_test_ds.csv"
 test_data = read_csv(TEST_DATA)
 
+# Reorder columns
+col_list = data.columns[:COLS_USED]
+test_data = test_data[["id_solicitante"] + list(col_list)]
+
 # Exclude id for inference
 test_x = test_data[test_data.columns[1:COLS_USED + 1]].to_numpy()
 test_y = final_model.predict(test_x)
