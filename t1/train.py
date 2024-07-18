@@ -6,6 +6,7 @@ from sklearn.model_selection import KFold, GridSearchCV
 from pandas import read_csv
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
+from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
 import numpy as np
@@ -173,8 +174,6 @@ print(f"Best result: {gs.best_score_:.5f} and params {gs.best_params_}")
 
 # %%
 # Train MPL
-from sklearn.neural_network import MLPClassifier
-
 param_grid = [
     dict(
         clf__hidden_layer_sizes=[(10,1), (10,2), (10,3), (10,4), (10,5)],
@@ -205,3 +204,15 @@ log_results("std-mlp", gs.cv_results_)
 print(f"Best result: {gs.best_score_:.5f} and params {gs.best_params_}")
 
 # %%
+# Train final model
+model = Pipeline((
+    ("std", StandardScaler()),
+    ("clf", MLPClassifier(
+        activation="relu",
+        batch_size=25,
+        hidden_layer_sizes=(10, 3),
+        solver="sgd"
+    ))
+))
+
+model.fit(x, y)
