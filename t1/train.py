@@ -1,6 +1,7 @@
 # %%
 # Imports
-from mlflow import log_metrics, log_params, start_run
+from mlflow import log_metrics, log_params, start_run, log_input
+import mlflow
 from sklearn.model_selection import KFold, GridSearchCV
 from pandas import read_csv
 from sklearn.linear_model import LogisticRegression
@@ -14,8 +15,8 @@ import numpy as np
 DATA_FILE = "selected_features.csv"
 SPLITS = 5
 EXP_ID = "1"
-COLS_USED = 10
-LOG_TO_DB = False
+COLS_USED = 18
+LOG_TO_DB = True
 
 
 # Read from csv and turn into array
@@ -25,6 +26,8 @@ y = data["inadimplente"].to_numpy()
 features = data.drop(["inadimplente"], axis=1)
 x = features[features.columns[:COLS_USED]].to_numpy()
 
+# Log the dataset used
+dataset = mlflow.data.from_pandas(data, name="credit-default-training")
 
 # Shuffle with set random state for reproducibility
 cv = KFold(SPLITS, shuffle=True, random_state=1000)
@@ -58,6 +61,7 @@ def log_from_grid(name_prefix: str, params, metrics):
     ):
         log_params(params)
         log_metrics(metrics)
+        log_input(dataset)
 
 
 def log_results(name, results):
@@ -144,8 +148,8 @@ print(f"Best result: {gs.best_score_:.5f} and params {gs.best_params_}")
 # %%
 # Train SVM (with standard scalers)
 param_grid = [{
-    "clf__C": np.linspace(0.4, 0.6, num=10),
-    "clf__gamma": np.linspace(0.025, 0.035, num=5)
+    "clf__C": np.linspace(0.25, 0.45, num=40),
+    "clf__gamma": np.linspace(0.01, 0.3, num=15)
 }]
 
 model = Pipeline((
@@ -155,7 +159,7 @@ model = Pipeline((
 
 gs = GridSearchCV(
     model,
-    n_jobs=15,
+    n_jobs=8,
     param_grid=param_grid,
     cv=cv,
     refit=True
@@ -171,9 +175,15 @@ print(f"Best result: {gs.best_score_:.5f} and params {gs.best_params_}")
 # Train MPL
 from sklearn.neural_network import MLPClassifier
 
-param_grid = [{
-    "clf__hidden_layer_sizes": [(1, 10), (2, 10), (3, 10), (4, 10)]
-}]
+param_grid = [
+    dict(
+        clf__hidden_layer_sizes=[(10,1), (10,2), (10,3), (10,4), (10,5)],
+        clf__activation=['logistic', 'tanh', 'relu'],
+        clf__solver=["lbfgs", "sgd", "adam"],
+        clf__batch_size=[10, 25, 50, 100, 200],
+    )
+]
+
 
 model = Pipeline((
     ("std", StandardScaler()),

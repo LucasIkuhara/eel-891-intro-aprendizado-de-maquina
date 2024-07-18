@@ -44,24 +44,12 @@ for col in bin_cols:
     )
 
 # %%
-# Map states into regions in ascending HDI order (with missing as a region)
-nordeste = ["MA", "PI", "CE", "RN", "PB", "PE", "AL", "SE", "BA"]
-norte = ["AM", "PA", "AC", "RO", "RR", "AP", "TO"]
-centro_oeste = ["MT", "MS", "GO", "DF"]
-sudeste = ["RJ", "MG", "SP", "ES"]
-sul = ["RS", "SC", "PA"]
-
-def map_state(el: str) -> float:
-    if el in nordeste: return 1
-    elif el in norte: return 2
-    elif el in centro_oeste: return 3
-    elif el in sudeste: return 4
-    elif el in sul: return 5
-    else: return 0
-
-df["estado_onde_nasceu"] = df["estado_onde_nasceu"].map(map_state)
-df["estado_onde_reside"] = df["estado_onde_reside"].map(map_state)
-df["estado_onde_trabalha"] = df["estado_onde_trabalha"].map(map_state)
+# Target-encode some categorical features using their relative frequency by category
+df["estado_onde_nasceu"] = df.groupby("estado_onde_nasceu")["inadimplente"].transform('mean')
+df["estado_onde_reside"] = df.groupby("estado_onde_reside")["inadimplente"].transform('mean')
+df["estado_onde_trabalha"] = df.groupby("estado_onde_trabalha")["inadimplente"].transform('mean')
+df["codigo_area_telefone_residencial"] = df.groupby("codigo_area_telefone_residencial")["inadimplente"].transform('mean')
+df["codigo_area_telefone_trabalho"] = df.groupby("codigo_area_telefone_trabalho")["inadimplente"].transform('mean')
 
 # %%
 # One-hot encode "forma_envio_solicitacao"
@@ -70,12 +58,6 @@ df["envio_internet"] = (df["forma_envio_solicitacao"] == "internet").astype(floa
 df["envio_correio"] = (df["forma_envio_solicitacao"] == "correio").astype(float)
 
 # %%
-# Exclude phone area codes, which somewhat equivalent to state already
-area_codes = [
-    "codigo_area_telefone_residencial",
-    "codigo_area_telefone_trabalho",
-]
-
 # Drop columns which are mostly null, with no way to fill them
 useless = [
     "possui_telefone_celular",    # All 'N's
@@ -86,7 +68,7 @@ useless = [
     "id_solicitante"              # Unique transactional id  
 ]
 
-df = df.drop(area_codes + useless, axis=1)
+df = df.drop(useless, axis=1)
 
 # %%
 # Get correlation of numerical columns
