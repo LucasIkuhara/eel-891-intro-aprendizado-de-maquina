@@ -44,15 +44,31 @@ df = pd.read_csv(INPUT_FILE)
 # Check for nulls
 df.info()
 
+
 # %%
 # Treat raw text in "diferenciais"
-# One-hot encode common features
-df["tem_piscina"] = df.diferenciais.map(lambda el: "piscina" in el)
-df["tem_copa"] = df.diferenciais.map(lambda el: "copa" in el)
-df["tem_churrasqueira"] = df.diferenciais.map(lambda el: "churrasqueira" in el)
-df["tem_sauna"] = df.diferenciais.map(lambda el: "sauna" in el)
-df["tem_quadra"] = df.diferenciais.map(lambda el: "quadra" in el)
-df["tem_sala"] = df.diferenciais.map(lambda el: "sala" in el)
+# Create score base
+def score_amenities(el):
+    score = 0
+    amenities = {
+        "piscina": 1,
+        "copa": 1,
+        "churrasqueira": 1,
+        "sauna": 1,
+        "quadra": 1,
+        "campo": 1,
+        "sala": 1,
+        "playground": 1,
+    }
+
+    for feat in amenities:
+        if feat in el:
+            score += amenities[feat]
+
+    return score
+
+
+df["amenities"] = df.diferenciais.map(score_amenities)
 
 # %%
 # Drop diferenciais
