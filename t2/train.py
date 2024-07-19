@@ -2,7 +2,7 @@
 # Imports
 from mlflow import log_metrics, log_params, start_run, log_input
 import mlflow
-from sklearn.model_selection import KFold, GridSearchCV, cross_val_score
+from sklearn.model_selection import KFold, RandomizedSearchCV, cross_val_score
 from pandas import read_csv
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
@@ -10,6 +10,7 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.svm import SVR
 import numpy as np
+from scipy.stats import uniform
 
 # %%
 # Read training data
@@ -44,8 +45,6 @@ def log_from_grid(name_prefix: str, params, metrics):
         if isinstance(val, float): val = f"{val:.2f}"
         name += f"-{p}-{val}"
 
-    params["columns-used"] = COLS_USED
-
     if not LOG_TO_DB: 
         return
 
@@ -75,46 +74,26 @@ def log_results(name, results):
         log_from_grid(name, params=params, metrics=metrics)
 
 # %%
-# Train Logistic regressor (no scalers)
-param_grid = [
-    {"penalty": [None], "max_iter": [10000], "solver": ["lbfgs"]},
-    {"C": np.linspace(0.1, 2, num=30), "penalty": ["l1"], "max_iter": [10000], "solver": ["liblinear"]},
-    {"C": np.linspace(0.1, 2, num=30), "penalty": ["l2"], "max_iter": [10000], "solver": ["lbfgs"]}
-]
-
-gs = GridSearchCV(
-    LogisticRegression(),
-    n_jobs=8,
-    param_grid=param_grid,
-    cv=cv,
-    refit=True
-)
-
-gs.fit(X=x, y=y)
-
-# Log results
-log_results("logistic-regression", gs.cv_results_)
-print(f"Best result: {gs.best_score_:.5f} and params {gs.best_params_}")
-
-# %%
 # Linear regressor (without standard scalers)
 model = LinearRegression()
-score = cross_val_score(model, x, y, cv=cv)
-
+score = cross_val_score(model, x, y, cv=cv, scoring="neg_root_mean_squared_error")
+print(f"Linear Regression results for baseline: RMSE={-score.mean():.1f} +- {score.std():.1f}")
 
 # %%
 # Train SVM (no scalers)
-param_grid = [{
-    "C": np.linspace(0.01, 0.2, num=5),
-    "gamma": np.linspace(0.01, 0.2, num=5)
+dist = [{
+    "C": uniform(loc=2, scale=2),
+    "gamma": np.linspace(0.001, 0.1, num=5)
 }]
 
-gs = GridSearchCV(
-    SVC(),
-    n_jobs=8,
-    param_grid=param_grid,
+gs = RandomizedSearchCV(
+    SVR(),
+    dist,
+    n_jobs=15,
     cv=cv,
-    refit=True
+    refit=True,
+    scoring="neg_root_mean_squared_error",
+    n_iter=50
 )
 
 gs.fit(X=x, y=y)

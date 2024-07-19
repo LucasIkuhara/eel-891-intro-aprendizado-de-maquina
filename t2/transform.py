@@ -51,11 +51,11 @@ df.info()
 for tipo in ['Casa', 'Apartamento', 'Quitinete', 'Loft']:
     df[f"tipo_{tipo.lower()}"] = df["tipo"] == tipo
 
-df = df.drop(columns=["tipo"])
-
 # Treat raw text in "tipo_vendedor"
 df["venda_imobiliaria"] = df["tipo_vendedor"] == 'Imobiliaria'
 df["venda_pessoa"] = df["tipo_vendedor"] == 'Pessoa Fisica'
+
+df = df.drop(columns=["tipo", "tipo_vendedor"])
 
 # %%
 # Treat "bairro" replacing the value by its mean value
