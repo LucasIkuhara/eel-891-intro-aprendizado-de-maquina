@@ -23,7 +23,7 @@ LOG_TO_DB = True
 # Read from csv and turn into array
 data = read_csv(TRAIN_FILE)
 
-x = data.drop(columns=["preco"]).to_numpy()
+x = data.drop(columns=["preco", "Id"]).to_numpy()
 y = data[["preco"]].to_numpy().reshape((-1,))
 
 # Log the dataset used
@@ -67,7 +67,7 @@ def log_results(name, results):
 
         params = results["params"][i]
         metrics = {
-            "accuracy": results["mean_test_score"][i],
+            "rmse": results["mean_test_score"][i],
             "fit-time": results["mean_fit_time"][i]
         }
         print(f'{name}: {results["mean_test_score"][i]:.5f}')
@@ -133,42 +133,44 @@ print(f"Best result: {rs.best_score_:.5f} and params {rs.best_params_}")
 
 # %%
 # Train MPL
-param_grid = [
+dist = [
     dict(
-        clf__hidden_layer_sizes=[(10,2), (10,3), (10,4)],
-        clf__activation=['logistic', 'relu'],
-        clf__solver=["lbfgs", "sgd", "adam"],
-        clf__batch_size=[10, 15, 20, 25],
-        clf__learning_rate_init=[0.05, 0.001, 0.005],
-        clf__alpha=[0.0001/2, 0.0001, 0.0001*2]
+        reg__hidden_layer_sizes=[(22,2), (22,3), (22,4)],
+        reg__activation=['logistic', 'relu'],
+        reg__solver=["lbfgs", "sgd", "adam"],
+        reg__batch_size=np.linspace(10, 200, 6, dtype=np.int32),
+        reg__learning_rate_init=uniform(loc=0.001, scale=0.002),
+        reg__alpha=uniform(loc=0.001, scale=0.002)
     )
 ]
 
-
+mlp_scaler = StandardScaler()
 model = Pipeline((
-    ("std", StandardScaler()),
-    ("clf", MLPRegressor(max_iter=1000, early_stopping=True))
+    ("std", mlp_scaler),
+    ("reg", MLPRegressor(max_iter=1000, early_stopping=True))
 ))
 
-gs = GridSearchCV(
+rs = RandomizedSearchCV(
     model,
+    dist,
     n_jobs=15,
-    param_grid=param_grid,
     cv=cv,
-    refit=True
+    refit=True,
+    scoring="neg_root_mean_squared_error",
+    n_iter=50
 )
 
-gs.fit(X=x, y=y)
+rs.fit(X=x, y=y)
 
 # Log results
-log_results("std-mlp", gs.cv_results_)
-print(f"Best result: {gs.best_score_:.5f} and params {gs.best_params_}")
+log_results("std-mlp", rs.cv_results_)
+print(f"Best result: {rs.best_score_:.5f} and params {rs.best_params_}")
 
 # %%
 # Train final model
 final_model = Pipeline((
     ("std", StandardScaler()),
-    ("clf", MLPRegressor(
+    ("reg", MLPRegressor(
         activation="relu",
         batch_size=15,
         alpha=5e-5,
@@ -182,17 +184,13 @@ final_model.fit(x, y)
 
 # %%
 # Read test data and eval it
-TEST_DATA = "clean_test_ds.csv"
+TEST_DATA = "test_data.csv"
 test_data = read_csv(TEST_DATA)
 
-# Reorder columns
-col_list = data.columns[:COLS_USED]
-test_data = test_data[["id_solicitante"] + list(col_list)]
-
 # Exclude id for inference
-test_x = test_data[test_data.columns[1:COLS_USED + 1]].to_numpy()
+test_x = test_data.to_numpy()
 test_y = final_model.predict(test_x)
 
-test_data["inadimplente"] = test_y
-res = test_data[["id_solicitante", "inadimplente"]]
+test_data["preco"] = test_y
+res = test_data[["Id", "preco"]]
 res.to_csv("results.csv", index=False)

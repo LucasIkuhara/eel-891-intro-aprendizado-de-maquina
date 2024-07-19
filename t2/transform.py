@@ -86,8 +86,27 @@ else:
     df["bairro"] = df["bairro"].apply(apply_encoding)
 
 # %%
-# Drop redundant column
+# Merge features to reduce dimensionality
 df = df.drop(columns=["diferenciais"])
+feats = {
+    "churrasqueira": 1,
+    "estacionamento": 1,
+    "piscina": 1,
+    "playground": 1,
+    "quadra": 1,
+    "s_festas": 1,
+    "s_jogos": 1,
+    "s_ginastica": 1,
+    "sauna": 1,
+    "vista_mar": 1,
+}
+
+df["amenities"] = 0
+for col in feats:
+    w = feats[col]
+    df["amenities"] = df["amenities"] + w * df[col]
+
+df = df.drop(columns=list(feats.keys()))
 
 # %%
 # Dump processed file
