@@ -86,7 +86,7 @@ dist = [{
     "gamma": np.linspace(0.001, 0.1, num=5)
 }]
 
-gs = RandomizedSearchCV(
+rs = RandomizedSearchCV(
     SVR(),
     dist,
     n_jobs=15,
@@ -96,37 +96,40 @@ gs = RandomizedSearchCV(
     n_iter=50
 )
 
-gs.fit(X=x, y=y)
+rs.fit(X=x, y=y)
 
 # Log results
-log_results("svm", gs.cv_results_)
-print(f"Best result: {gs.best_score_:.5f} and params {gs.best_params_}")
+log_results("svm", rs.cv_results_)
+print(f"Best result: {rs.best_score_:.5f} and params {rs.best_params_}")
 
 # %%
 # Train SVM (with standard scalers)
-param_grid = [{
-    "clf__C": np.linspace(0.25, 0.45, num=40),
-    "clf__gamma": np.linspace(0.01, 0.3, num=15)
+dist = [{
+    "C": uniform(loc=0, scale=4),
+    "gamma": np.linspace(0.001, 0.1, num=5)
 }]
 
+svm_scaler = StandardScaler()
 model = Pipeline((
-    ("std", StandardScaler()),
-    ("clf", SVC())
+    ("std", svm_scaler),
+    ("clf", SVR())
 ))
 
-gs = GridSearchCV(
-    model,
-    n_jobs=8,
-    param_grid=param_grid,
+rs = RandomizedSearchCV(
+    SVR(),
+    dist,
+    n_jobs=15,
     cv=cv,
-    refit=True
+    refit=True,
+    scoring="neg_root_mean_squared_error",
+    n_iter=50
 )
 
-gs.fit(X=x, y=y)
+rs.fit(X=x, y=y)
 
 # Log results
-log_results("std-svm", gs.cv_results_)
-print(f"Best result: {gs.best_score_:.5f} and params {gs.best_params_}")
+log_results("std-svm", rs.cv_results_)
+print(f"Best result: {rs.best_score_:.5f} and params {rs.best_params_}")
 
 # %%
 # Train MPL
