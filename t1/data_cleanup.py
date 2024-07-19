@@ -30,7 +30,9 @@ pd.DataFrame(uniques, columns=["column", "unique-count"])
 # %%
 # Transform sex into numbers
 # Go from "sexo" (M, F, N, " ") to 0, 1
-df = df[df["sexo"] != " "]  # Drop empty strings
+if not IS_TEST_FILE:
+    df = df[df["sexo"] != " "]  # Drop empty strings
+
 df["sexo"] = df["sexo"].map(lambda e: 1 if e == "F" else 0)  # Cast to num, assuming N is typo for M
 
 # %%
@@ -136,5 +138,9 @@ if not IS_TEST_FILE:
 
 # %%
 # Drop remaining NAs and dump df to csv file
-df = df.dropna()
+if not IS_TEST_FILE:
+    df = df.dropna()
+
+else:
+    df = df.fillna(0)
 df.to_csv(OUTPUT_FILE, index=False)
