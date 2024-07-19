@@ -176,17 +176,19 @@ print(f"Best result: {gs.best_score_:.5f} and params {gs.best_params_}")
 # Train MPL
 param_grid = [
     dict(
-        clf__hidden_layer_sizes=[(10,1), (10,2), (10,3), (10,4), (10,5)],
-        clf__activation=['logistic', 'tanh', 'relu'],
+        clf__hidden_layer_sizes=[(10,2), (10,3), (10,4)],
+        clf__activation=['logistic', 'relu'],
         clf__solver=["lbfgs", "sgd", "adam"],
-        clf__batch_size=[10, 25, 50, 100, 200],
+        clf__batch_size=[10, 15, 20, 25],
+        clf__learning_rate_init=[0.05, 0.001, 0.005],
+        clf__alpha=[0.0001/2, 0.0001, 0.0001*2]
     )
 ]
 
 
 model = Pipeline((
     ("std", StandardScaler()),
-    ("clf", MLPClassifier())
+    ("clf", MLPClassifier(max_iter=1000, early_stopping=True))
 ))
 
 gs = GridSearchCV(
