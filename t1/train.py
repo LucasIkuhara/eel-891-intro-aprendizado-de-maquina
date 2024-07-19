@@ -211,9 +211,11 @@ final_model = Pipeline((
     ("std", StandardScaler()),
     ("clf", MLPClassifier(
         activation="relu",
-        batch_size=25,
-        hidden_layer_sizes=(10, 3),
-        solver="sgd"
+        batch_size=15,
+        alpha=5e-5,
+        hidden_layer_sizes=(10, 4),
+        solver="sgd",
+        learning_rate_init=0.05
     ))
 ))
 
