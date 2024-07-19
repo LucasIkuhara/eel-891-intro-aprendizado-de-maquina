@@ -52,10 +52,9 @@ for tipo in ['Casa', 'Apartamento', 'Quitinete', 'Loft']:
     df[f"tipo_{tipo.lower()}"] = df["tipo"] == tipo
 
 # Treat raw text in "tipo_vendedor"
-df["venda_imobiliaria"] = df["tipo_vendedor"] == 'Imobiliaria'
-df["venda_pessoa"] = df["tipo_vendedor"] == 'Pessoa Fisica'
+df["tipo_vendedor"] = df["tipo_vendedor"] == 'Imobiliaria'
 
-df = df.drop(columns=["tipo", "tipo_vendedor"])
+df = df.drop(columns=["tipo"])
 
 # %%
 # Treat "bairro" replacing the value by its mean value
@@ -87,29 +86,7 @@ else:
     df["bairro"] = df["bairro"].apply(apply_encoding)
 
 # %%
-# Treat raw text in "diferenciais"
-# Create score base
-def score_amenities(el):
-    score = 0
-    amenities = {
-        "piscina": 1,
-        "copa": 1,
-        "churrasqueira": 1,
-        "sauna": 1,
-        "quadra": 1,
-        "campo": 1,
-        "sala": 1,
-        "playground": 1,
-    }
-
-    for feat in amenities:
-        if feat in el:
-            score += amenities[feat]
-
-    return score
-
-
-df["amenities"] = df.diferenciais.map(score_amenities)
+# Drop redundant column
 df = df.drop(columns=["diferenciais"])
 
 # %%

@@ -24,7 +24,7 @@ LOG_TO_DB = True
 data = read_csv(TRAIN_FILE)
 
 x = data.drop(columns=["preco"]).to_numpy()
-y = data[["preco"]].to_numpy()
+y = data[["preco"]].to_numpy().reshape((-1,))
 
 # Log the dataset used
 dataset = mlflow.data.from_pandas(data, name="real-estate-train")
@@ -105,18 +105,18 @@ print(f"Best result: {rs.best_score_:.5f} and params {rs.best_params_}")
 # %%
 # Train SVM (with standard scalers)
 dist = [{
-    "C": uniform(loc=0, scale=4),
-    "gamma": np.linspace(0.001, 0.1, num=5)
+    "reg__C": uniform(loc=0, scale=4),
+    "reg__gamma": np.linspace(0.001, 0.1, num=5)
 }]
 
 svm_scaler = StandardScaler()
 model = Pipeline((
     ("std", svm_scaler),
-    ("clf", SVR())
+    ("reg", SVR())
 ))
 
 rs = RandomizedSearchCV(
-    SVR(),
+    model,
     dist,
     n_jobs=15,
     cv=cv,
@@ -147,7 +147,7 @@ param_grid = [
 
 model = Pipeline((
     ("std", StandardScaler()),
-    ("clf", MLPClassifier(max_iter=1000, early_stopping=True))
+    ("clf", MLPRegressor(max_iter=1000, early_stopping=True))
 ))
 
 gs = GridSearchCV(
@@ -168,7 +168,7 @@ print(f"Best result: {gs.best_score_:.5f} and params {gs.best_params_}")
 # Train final model
 final_model = Pipeline((
     ("std", StandardScaler()),
-    ("clf", MLPClassifier(
+    ("clf", MLPRegressor(
         activation="relu",
         batch_size=15,
         alpha=5e-5,
