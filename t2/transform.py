@@ -7,6 +7,7 @@ import argparse
 
 INPUT_FILE = "data/conjunto_de_treinamento.csv"
 OUTPUT_FILE = "train_ds.csv"
+TARGET_ENCODINGS = "bairro.json"
 IS_TRAINING_FILE = True
 
 # %%
@@ -44,6 +45,46 @@ df = pd.read_csv(INPUT_FILE)
 # Check for nulls
 df.info()
 
+# %%
+# One-hot encode categorical columns with few values
+# Treat raw text in "tipo"
+for tipo in ['Casa', 'Apartamento', 'Quitinete', 'Loft']:
+    df[f"tipo_{tipo.lower()}"] = df["tipo"] == tipo
+
+df = df.drop(columns=["tipo"])
+
+# Treat raw text in "tipo_vendedor"
+df["venda_imobiliaria"] = df["tipo_vendedor"] == 'Imobiliaria'
+df["venda_pessoa"] = df["tipo_vendedor"] == 'Pessoa Fisica'
+
+# %%
+# Treat "bairro" replacing the value by its mean value
+if IS_TRAINING_FILE:
+    bairro = {}
+    df["bairro_media"] = df.groupby("bairro")["preco"].transform('mean')
+    for val in df[["bairro", "bairro_media"]].drop_duplicates().iloc:
+        bairro[val.bairro] = val.bairro_media
+
+    # Pre-compute mean to use in missing 'bairro' values
+    bairro["default"] = df["bairro_media"].mean()
+    json.dump(bairro, open(TARGET_ENCODINGS, "w"))
+
+    # Replace name by means
+    df["bairro"] = df["bairro_media"]
+    df = df.drop(columns=["bairro_media"])
+
+else:
+    encodings = json.load(open(TARGET_ENCODINGS, "r"))
+
+    def apply_encoding(el):
+        # Used saved encodings, if missing use 0.5
+        try:
+            return encodings[el]
+        except KeyError:
+            print(f"missing encoding for {el}.")
+            return encodings["default"]
+
+    df["bairro"] = df["bairro"].apply(apply_encoding)
 
 # %%
 # Treat raw text in "diferenciais"
@@ -69,9 +110,6 @@ def score_amenities(el):
 
 
 df["amenities"] = df.diferenciais.map(score_amenities)
-
-# %%
-# Drop diferenciais
 df = df.drop(columns=["diferenciais"])
 
 # %%

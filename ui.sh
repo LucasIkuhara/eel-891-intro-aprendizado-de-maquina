@@ -1,2 +1,2 @@
 #!/bin/sh
-python -m mlflow ui --backend-store-uri $(grep -oP '^MLFLOW_TRACKING_URI=.*$' .env | cut -d= -f2-) -p 8080
+python -m mlflow ui -p 8080 --backend-store-uri $DB_CONN_STRING
