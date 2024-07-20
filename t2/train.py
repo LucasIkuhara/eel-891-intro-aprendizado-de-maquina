@@ -19,11 +19,20 @@ SPLITS = 5
 EXP_ID = "2"
 LOG_TO_DB = True
 
+used_cols = [
+    "tipo_vendedor",
+    "quartos",
+    "suites",
+    "vagas",
+    "area_util",
+    "area_extra"
+]
+
 # %%
 # Read from csv and turn into array
 data = read_csv(TRAIN_FILE)
 
-x = data.drop(columns=["preco", "Id"]).to_numpy()
+x = data[used_cols].to_numpy()
 y = data[["preco"]].to_numpy().reshape((-1,))
 
 # Log the dataset used
@@ -105,8 +114,10 @@ print(f"Best result: {rs.best_score_:.5f} and params {rs.best_params_}")
 # %%
 # Train SVM (with standard scalers)
 dist = [{
-    "reg__C": uniform(loc=0, scale=4),
-    "reg__gamma": np.linspace(0.001, 0.1, num=5)
+    # "reg__C": np.linspace(1e7, 1e9, 150),
+    "reg__C": uniform(loc=1e7, scale=1e7/4),
+    "reg__gamma": uniform(loc=0.05, scale=0.05),
+    # "reg__gamma": np.linspace(0, 1, 150),
 }]
 
 svm_scaler = StandardScaler()
@@ -122,7 +133,7 @@ rs = RandomizedSearchCV(
     cv=cv,
     refit=True,
     scoring="neg_root_mean_squared_error",
-    n_iter=50
+    n_iter=500
 )
 
 rs.fit(X=x, y=y)
@@ -135,7 +146,7 @@ print(f"Best result: {rs.best_score_:.5f} and params {rs.best_params_}")
 # Train MPL
 dist = [
     dict(
-        reg__hidden_layer_sizes=[(12,2), (12,3), (12,4)],
+        reg__hidden_layer_sizes=[(5,2), (5,3), (5,4), (10,2), (10,3), (10,4)],
         reg__activation=['logistic', 'relu'],
         reg__solver=["lbfgs", "sgd", "adam"],
         reg__batch_size=np.linspace(10, 200, 6, dtype=np.int32),
@@ -147,7 +158,7 @@ dist = [
 mlp_scaler = StandardScaler()
 model = Pipeline((
     ("std", mlp_scaler),
-    ("reg", MLPRegressor(max_iter=1000, early_stopping=True))
+    ("reg", MLPRegressor(max_iter=3000, early_stopping=True))
 ))
 
 rs = RandomizedSearchCV(
@@ -171,13 +182,9 @@ print(f"Best result: {rs.best_score_:.5f} and params {rs.best_params_}")
 final_scaler = StandardScaler()
 final_model = Pipeline((
     ("std", final_scaler),
-    ("reg", MLPRegressor(
-        activation='relu',
-        alpha=0.002713276726173436,
-        batch_size=10, 
-        hidden_layer_sizes=(12, 3), 
-        learning_rate_init=0.0027199666417836417,
-        solver='adam'
+    ("reg", SVR(
+        C=12453751.825599143,
+        gamma=0.05171257493033211
     ))
 ))
 
@@ -189,7 +196,7 @@ TEST_DATA = "test_data.csv"
 test_data = read_csv(TEST_DATA)
 
 # Exclude id for inference
-test_x = test_data.drop(columns=["Id"]).to_numpy()
+test_x = test_data[used_cols].to_numpy()
 test_y = final_model.predict(test_x)
 
 test_data["preco"] = test_y
