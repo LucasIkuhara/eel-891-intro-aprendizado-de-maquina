@@ -135,7 +135,7 @@ print(f"Best result: {rs.best_score_:.5f} and params {rs.best_params_}")
 # Train MPL
 dist = [
     dict(
-        reg__hidden_layer_sizes=[(22,2), (22,3), (22,4)],
+        reg__hidden_layer_sizes=[(12,2), (12,3), (12,4)],
         reg__activation=['logistic', 'relu'],
         reg__solver=["lbfgs", "sgd", "adam"],
         reg__batch_size=np.linspace(10, 200, 6, dtype=np.int32),
@@ -168,15 +168,16 @@ print(f"Best result: {rs.best_score_:.5f} and params {rs.best_params_}")
 
 # %%
 # Train final model
+final_scaler = StandardScaler()
 final_model = Pipeline((
-    ("std", StandardScaler()),
+    ("std", final_scaler),
     ("reg", MLPRegressor(
-        activation="relu",
-        batch_size=15,
-        alpha=5e-5,
-        hidden_layer_sizes=(10, 4),
-        solver="sgd",
-        learning_rate_init=0.05
+        activation='relu',
+        alpha=0.002713276726173436,
+        batch_size=10, 
+        hidden_layer_sizes=(12, 3), 
+        learning_rate_init=0.0027199666417836417,
+        solver='adam'
     ))
 ))
 
@@ -188,9 +189,9 @@ TEST_DATA = "test_data.csv"
 test_data = read_csv(TEST_DATA)
 
 # Exclude id for inference
-test_x = test_data.to_numpy()
+test_x = test_data.drop(columns=["Id"]).to_numpy()
 test_y = final_model.predict(test_x)
 
 test_data["preco"] = test_y
 res = test_data[["Id", "preco"]]
-res.to_csv("results.csv", index=False)
+res.to_csv("t2_results.csv", index=False)
