@@ -109,5 +109,33 @@ for col in feats:
 df = df.drop(columns=list(feats.keys()))
 
 # %%
+# Outlier treatment
+def cap_max_min(el, max, min):
+
+    if el > max:
+        return max
+    elif el < min:
+        return min
+
+    return el
+
+cols = [
+    'bairro',
+    'quartos',
+    'suites', 
+    'vagas',
+    'area_util',
+    'area_extra',
+]
+
+for col in cols:
+
+    c_max = df[col].mean() + 2 * df[col].std()
+    c_min = df[col].mean() - 2 * df[col].std()
+
+    tr = lambda el: cap_max_min(el, c_max, c_min)
+    df[col] = df[col].apply(tr)
+
+# %%
 # Dump processed file
 df.to_csv(OUTPUT_FILE, index=False)
